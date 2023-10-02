@@ -1,0 +1,31 @@
+{
+    "calculations": [
+        {
+            "ProfileType": "7mm",
+            "Values": [
+                -36,
+                -36,
+                -41,
+                8
+            ]
+        },
+        {
+            "ProfileType": "7mm",
+            "Values": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "ProfileType": "7mm",
+            "Values": [
+                50,
+                50,
+                0,
+                0
+            ]
+        }
+    ]
+}
