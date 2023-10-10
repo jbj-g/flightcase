@@ -16,10 +16,10 @@ class bucky(wx.Frame):
         self.input_names = ["height top", "height bottom", "width", "depth"]
 
         #next for what input
-        self.HeightTop = wx.StaticText(self.panel, label="height top")
-        self.HeightBottom = wx.StaticText(self.panel, label="height bottom")
-        self.Width = wx.StaticText(self.panel, label="width")
-        self.Depth = wx.StaticText(self.panel, label="depth")
+        self.HeightTop = wx.StaticText(self.panel, label="height top:")
+        self.HeightBottom = wx.StaticText(self.panel, label="height bottom:")
+        self.Width = wx.StaticText(self.panel, label="width:")
+        self.Depth = wx.StaticText(self.panel, label="depth:")
         self.CalcText = wx.StaticText(self.panel, label="calculations:")
 
         self.inputs = [0] * 4
@@ -105,6 +105,7 @@ class bucky(wx.Frame):
             if self.answer[i] < 1:
                 self.error.SetLabel(f"error")
                 self.calc[i].SetForegroundColour(wx.RED)
+                self.error.SetForegroundColour(wx.RED)
                 self.calc[i].SetLabel(str(self.answer[i]))
         #if no error
             else:   
@@ -144,7 +145,11 @@ class DataWindow(wx.Frame):
     def __init__(self, parent, id):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="history", pos=wx.DefaultPosition, size=(600, 400))
         self.panel = wx.Panel(self)
-        self.previous = 0
+        fileDir = "fcc/data/BackLog.json"
+        data = get_data(fileDir)
+        self.previous = len(data['calculations'])
+        
+
         
         self.prev_button = wx.Button(self.panel, size=(24,-1), label="<")
         self.next_button = wx.Button(self.panel, size=(24,-1), label=">")
@@ -154,10 +159,11 @@ class DataWindow(wx.Frame):
             self.dspl[i] = wx.StaticText(self.panel, label="")
 
         self.history = wx.StaticText(self.panel, label="history:")
-        self.HeightTop = wx.StaticText(self.panel, label="height top")
-        self.HeightBottom = wx.StaticText(self.panel, label="height bottom")
-        self.Width = wx.StaticText(self.panel, label="width")
-        self.Depth = wx.StaticText(self.panel, label="depth")
+        self.HeightTop = wx.StaticText(self.panel, label="height top:")
+        self.HeightBottom = wx.StaticText(self.panel, label="height bottom:")
+        self.Width = wx.StaticText(self.panel, label="width:")
+        self.Depth = wx.StaticText(self.panel, label="depth:")
+        self.id = wx.StaticText(self.panel, label="id: " + (str(self.previous)))
         
         
         self.back = [0] * 4
@@ -170,13 +176,26 @@ class DataWindow(wx.Frame):
         self.sizer = wx.GridBagSizer(5, 5)
         self.sizer.Add(self.HeightTop, (1,0))
         self.sizer.Add(self.HeightBottom, (2,0))
+        self.sizer.Add(self.id, (0,2))
         self.sizer.Add(self.Depth, (3,0))
         self.sizer.Add(self.Width, (4,0))
         self.sizer.Add(self.history, (0,0))
-        self.sizer.Add(self.prev_button,(5,3))
-        self.sizer.Add(self.next_button,(5,4))
+        self.sizer.Add(self.prev_button,(5,2))
+        self.sizer.Add(self.next_button,(5,3))
         for i, input in enumerate(self.back):
             self.sizer.Add(input,(i+1,2))
+        fileDir = "fcc/data/BackLog.json"
+        data = get_data(fileDir)
+        
+        
+        self.previous -= 1
+        self.id.SetLabel("id: " + (str(self.previous)))
+        calculations = data['calculations']
+
+        values = calculations[self.previous]['Values']
+            
+        for i, back in enumerate(self.back):
+             self.back[i].SetLabel(str(values[i]))
         
 
         self.Bind(wx.EVT_BUTTON, self.on_show_prev, self.prev_button)
@@ -185,21 +204,40 @@ class DataWindow(wx.Frame):
         #border for sizer
         self.border = wx.BoxSizer()
         self.border.Add(self.sizer, 1, wx.ALL | wx.EXPAND, 5)
+        
 
         #Use the sizers
         self.panel.SetSizerAndFit(self.border)  
         self.SetSizerAndFit(self.windowSizer)
     def on_show_prev(self, e):
-        self.previous -= 1
-        print("prev")
-        for i, back in enumerate(self.back):
-            self.back[i].SetLabel(str("prev"))
+        fileDir = "fcc/data/BackLog.json"
+        data = get_data(fileDir)
+        
+        if self.previous > 0:
+            self.previous -= 1
+            self.id.SetLabel("id: " + (str(self.previous)))
+            calculations = data['calculations']
+
+            values = calculations[self.previous]['Values']
+            
+            for i, back in enumerate(self.back):
+                self.back[i].SetLabel(str(values[i]))
 
         
     def on_show_next(self, e):
-        print("next")
-        for i, back in enumerate(self.back):
-            self.back[i].SetLabel(str("next"))
+        fileDir = "fcc/data/BackLog.json"
+        data = get_data(fileDir)
+        calculations = data['calculations']
+        
+        if self.previous < len(calculations) - 1:
+            self.previous += 1
+            self.id.SetLabel("id: " + (str(self.previous)))
+            # print('calculations: ', calculations)
+
+            values = calculations[self.previous]['Values']
+            
+            for i, back in enumerate(self.back):
+                self.back[i].SetLabel(str(values[i]))
         
         
 #-------------------------------------------------------------------------------#
@@ -216,10 +254,6 @@ def get_data(fileDir):
     
     with open(fileDir, "r") as json_file:
         data = json.load(json_file)
-
-    print(data)
-    print(json.dumps(data))
-    print(json.dumps(data, indent=1))
 
     return data
         
