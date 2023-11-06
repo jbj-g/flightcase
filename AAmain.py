@@ -4,7 +4,7 @@ import json
 import math
 
 
-
+print("gabriel sucks pp")
 class bucky(wx.Frame):
     def __init__(self, parent, style):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="calculator", pos=wx.DefaultPosition, style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
