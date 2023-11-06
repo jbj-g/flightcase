@@ -15,7 +15,7 @@ class DrawingFrame(wx.Frame):
 
     def calculate_scale(self):
         # Calculate the scale factor based on the maximum of p_bottom, p_top, p_side, and p_front
-        max_value = (p_side/0.8) #max(p_bottom, p_top, p_side, p_front)
+        max_value = (p_side /0.8) #max(p_bottom, p_top, p_side, p_front)
         # print(200 / max_value)
         return 200 / max_value  
     

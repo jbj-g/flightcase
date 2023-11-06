@@ -2,16 +2,14 @@ import wx
 import wx.lib.intctrl
 import json
 import math
-import time
 
-p_top  = None      #top
-p_bottom  = None   #bottom
-p_side = None      #side
-p_front = None     #front
+
+
 class bucky(wx.Frame):
-    def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="profiel calculator", pos=wx.DefaultPosition, size=(600, 400))
+    def __init__(self, parent, style):
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="calculator", pos=wx.DefaultPosition, style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.panel = wx.Panel(self)
+        self.InitUI() 
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.data_window = None
         self.render = None
@@ -46,7 +44,6 @@ class bucky(wx.Frame):
 
         #error Text
         self.error = wx.StaticText(self.panel, label="")
-        # self.error.SetForegroundColour(wx.RED)
 
         #sizer setup
         self.windowSizer = wx.BoxSizer()
@@ -85,8 +82,6 @@ class bucky(wx.Frame):
     #define button
     def OnButton(self, e):
         self.clean()
-        # if self.render:
-        #     self.render.Close()
         self.values = []
         buttonValue = self.ButtonSize7.GetValue()
         for input in self.inputs:
@@ -132,6 +127,8 @@ class bucky(wx.Frame):
                 self.calc[i].SetLabel(str(self.answer[i]))
                 self.calc[i].SetForegroundColour(wx.WHITE)
         if not errorCheck:
+            if self.render: 
+                self.render.Close()
             self.render = DrawingFrame(parent = None, id = -1)
             x, y = self.GetPosition()
             self.render.SetPosition((x, y + 197))
@@ -139,33 +136,24 @@ class bucky(wx.Frame):
             self.render.SetSize((512, 394))
             self.render.SetMaxSize((512, 394))
             self.render.SetMinSize((512, 394))
-            p_top    =  self.answer[0] #top
-            p_bottom =  self.answer[1]  #bottom
-            p_side   =  self.answer[2]  #side
-            p_front  =  self.answer[3]  #front
+            self.p_top    =  self.answer[0] #top
+            self.p_bottom =  self.answer[1]  #bottom
+            self.p_side   =  self.answer[2]  #side
+            self.p_front  =  self.answer[3]  #front
+    
                 
                
-
-            
-        
-        
-
-        
-        
-      
-
-    
-
-    def on_show_data(self, event,):
+    def on_show_data(self, event):
         # Create a new window to display data
+        if self.data_window: 
+                self.data_window.Close()
         self.data_window = DataWindow(parent = None, id = -1)
         first_window_size = self.GetSize()
         x, y = self.GetPosition()
         self.data_window.SetPosition((x + first_window_size[0], y))
         self.data_window.Show()
         self.data_window.SetSize((256, 197))
-        self.data_window.SetMaxSize((256, 197))
-        self.data_window.SetMinSize((256, 197))
+
         
     def on_close(self, event):
         # Close the second window if it's open
@@ -173,9 +161,47 @@ class bucky(wx.Frame):
             self.data_window.Close()
         if self.render:
             self.render.Close()
-        event.Skip()
+        event.Skip()  
+
+
+    def reset_data(self):
+        default_data = {
+            "calculations": [
+                {
+                    "ProfileType": "7mm",
+                    "Values": [10, 10, 10, 10]
+                }
+            ]
+        }
+
+        with open("fcc/data/BackLog.json", 'w') as file:
+            json.dump(default_data, file)
+        if self.data_window: 
+                self.data_window.Close()
+                self.data_window = DataWindow(parent = None, id = -1)
+                first_window_size = self.GetSize()
+                x, y = self.GetPosition()
+                self.data_window.SetPosition((x + first_window_size[0], y))
+                self.data_window.Show()
+                self.data_window.SetSize((256, 197))
     
-        
+                
+
+
+
+
+    def InitUI(self):    
+	 # Create a menu bar
+        menubar = wx.MenuBar()
+        history_menu = wx.Menu()
+        reset_item = history_menu.Append(wx.ID_ANY, "Reset")
+        self.Bind(wx.EVT_MENU, self.on_reset, reset_item)
+        menubar.Append(history_menu, "History")
+        self.SetMenuBar(menubar)
+
+    def on_reset(self, event):
+        self.reset_data()
+               
 
     #text clearen
     def clean(self):
@@ -184,10 +210,7 @@ class bucky(wx.Frame):
         for i, calc in enumerate(self.calc):
             self.calc[i].SetLabel("")
     
-
-
-
-
+    
 
 #-------------------------------------------------------------------------------#
 #history window
@@ -195,11 +218,12 @@ class DataWindow(wx.Frame):
     
         
     def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="history", pos=wx.DefaultPosition, size=(600, 400))
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="history", pos=wx.DefaultPosition, style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.panel = wx.Panel(self)
         fileDir = "fcc/data/BackLog.json"
         data = get_data(fileDir)
         self.previous = len(data['calculations'])
+        self.SetSize(wx.Size(256, 197))
         
  
         self.prev_button = wx.Button(self.panel, size=(24,-1), label="<")
@@ -250,7 +274,7 @@ class DataWindow(wx.Frame):
         
         
         self.previous -= 1
-        self.id.SetLabel("id: " + (str(self.previous)))
+        self.id.SetLabel("id: " + (str(self.previous + 1)))
         calculations = data['calculations']
 
         values = calculations[self.previous]['Values']
@@ -266,8 +290,12 @@ class DataWindow(wx.Frame):
             answer[i] = values[i] + self.math[p_type][i]
 
         for i, back in enumerate(self.back):
-             self.back[i].SetLabel(str(answer[i]))
-        
+            if answer[i] > 0:
+                self.back[i].SetForegroundColour(wx.WHITE)
+                self.back[i].SetLabel(str(answer[i]))
+            else:
+                self.back[i].SetForegroundColour(wx.RED)
+                self.back[i].SetLabel(str(answer[i]))
         #button binding
         self.Bind(wx.EVT_BUTTON, self.on_show_prev, self.prev_button)
         self.Bind(wx.EVT_BUTTON, self.on_show_next, self.next_button)
@@ -297,6 +325,11 @@ class DataWindow(wx.Frame):
             self.answer[i] = values[i] + self.math[p_type][i]
                 
         for i, back in enumerate(self.back):
+            if self.answer[i] > 0:
+                self.back[i].SetForegroundColour(wx.WHITE)
+                self.back[i].SetLabel(str(self.answer[i]))
+            else:
+                self.back[i].SetForegroundColour(wx.RED)
                 self.back[i].SetLabel(str(self.answer[i]))
             
 
@@ -307,7 +340,7 @@ class DataWindow(wx.Frame):
         
         if self.previous > 0:
             self.previous -= 1
-            self.id.SetLabel("id: " + (str(self.previous)))
+            self.id.SetLabel("id: " + (str(self.previous + 1)))
             calculations = data['calculations']
             p_type = calculations[self.previous]['ProfileType']
             values = calculations[self.previous]['Values']
@@ -321,7 +354,12 @@ class DataWindow(wx.Frame):
                 self.ButtonSize10.SetValue(True)
             
             for i, back in enumerate(self.back):
-                self.back[i].SetLabel(str(self.answer[i]))
+                if self.answer[i] > 0:
+                    self.back[i].SetForegroundColour(wx.WHITE)
+                    self.back[i].SetLabel(str(self.answer[i]))
+                else:
+                    self.back[i].SetForegroundColour(wx.RED)
+                    self.back[i].SetLabel(str(self.answer[i]))
 
         #function next button
     def on_show_next(self, e):
@@ -331,7 +369,7 @@ class DataWindow(wx.Frame):
         
         if self.previous < len(calculations) - 1:
             self.previous += 1
-            self.id.SetLabel("id: " + (str(self.previous)))
+            self.id.SetLabel("id: " + (str(self.previous + 1)))
             p_type = calculations[self.previous]['ProfileType']
             values = calculations[self.previous]['Values']
             self.answer = [0] * 4
@@ -343,20 +381,20 @@ class DataWindow(wx.Frame):
                 self.ButtonSize10.SetValue(True)
             
             for i, back in enumerate(self.back):
-                self.back[i].SetLabel(str(self.answer[i]))
+                if self.answer[i] > 0:
+                    self.back[i].SetForegroundColour(wx.WHITE)
+                    self.back[i].SetLabel(str(self.answer[i]))
+                else:
+                    self.back[i].SetForegroundColour(wx.RED)
+                    self.back[i].SetLabel(str(self.answer[i]))
         
         
 #-------------------------------------------------------------------------------#
 
-p_top =  48 #top
-p_bottom = 60    #bottom
-p_side = 200   #side
-p_front = 320   #front
 class DrawingFrame(wx.Frame):
 
-    # print(p_bottom, p_front, p_side, p_top)
     def __init__(self, parent, id):
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="wxPython Drawing", pos=wx.DefaultPosition, size=(512, 394))
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="render", pos=wx.DefaultPosition, size=(512, 394),style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Centre()
         self.Show()
@@ -366,16 +404,22 @@ class DrawingFrame(wx.Frame):
         self.previous = len(self.data['calculations'])
         self.previous =- 1
         values = self.calculations[self.previous]['Values']
-        print(values)
+        self.p_type = self.calculations[self.previous]['ProfileType']
+
+        self.p_top =  values[0]     #top
+        self.p_bottom = values[1]   #bottom
+        self.p_side = values[2]     #depth
+        self.p_front = values[3]     #width
+        self.avg = (self.p_side + self.p_front/2)
+        self.avg_b = (self.p_side + self.p_front + self.p_bottom /4)
+
        
 
 
     def calculate_scale(self):
-        # Calculate the scale factor based on the maximum of p_bottom, p_top, p_side, and p_front
-        max_value = (p_side/0.8) #max(p_bottom, p_top, p_side, p_front)
-        # print(200 / max_value)
+        max_value = (self.avg)
         return 200 / max_value  
-    
+     
     
     def draw_line(self, dc, length, angle, line_width):
         """Draw a line in the direction of the angle for a certain length."""
@@ -400,8 +444,8 @@ class DrawingFrame(wx.Frame):
         dc.SetLogicalScale(scale_factor, scale_factor)
 
         # Calculate the starting position
-        self.start_x = (p_side / 5)
-        self.start_y = (p_side / 0.6)
+        self.start_x = (self.p_side / 1)
+        self.start_y = (self.avg_b * 0.9 )
 
         line_thickness = 2 / scale_factor  # Scale the line thickness inversely
 
@@ -409,35 +453,35 @@ class DrawingFrame(wx.Frame):
         gc.SetPen(wx.Pen(wx.WHITE, int(line_thickness)))
 
      # Drawing the shape using setheading angles
-        self.draw_line(dc, p_bottom, 90, line_thickness)
-        self.draw_line(dc, p_side, 320, line_thickness)
-        self.draw_line(dc, p_bottom, 270, line_thickness)
-        self.draw_line(dc, p_side, 140, line_thickness)
-        self.draw_line(dc, p_front, 10, line_thickness)
-        self.draw_line(dc, p_bottom, 90, line_thickness)
-        self.draw_line(dc, p_side, 320, line_thickness)
-        self.draw_line(dc, p_bottom, 270, line_thickness)
-        self.draw_line(dc, p_side, 140, line_thickness)
-        self.draw_line(dc, p_side, 320, line_thickness)
-        self.draw_line(dc, p_front, 190, line_thickness)
-        self.draw_line(dc, p_bottom, 90, line_thickness)
-        self.draw_line(dc, p_front, 10, line_thickness)
-        self.draw_line(dc, p_side, 140, line_thickness)
-        self.draw_line(dc, p_front, 190, line_thickness)
-        self.draw_line(dc, p_top, 115, line_thickness)
-        self.draw_line(dc, p_front, 10, line_thickness)
-        self.draw_line(dc, p_top, 295, line_thickness)
-        self.draw_line(dc, p_side, 45, line_thickness)
-        self.draw_line(dc, p_top, 115, line_thickness)
-        self.draw_line(dc, -p_side, 45, line_thickness)
-        self.draw_line(dc, -p_front, 10, line_thickness)
-        self.draw_line(dc, p_side, 45, line_thickness)
-        self.draw_line(dc, -p_top, 115, line_thickness)
-        self.draw_line(dc, -p_side, 45, line_thickness)
-        self.draw_line(dc, p_side, 45, line_thickness)
-        self.draw_line(dc, p_front, 10, line_thickness)
-        self.draw_line(dc, p_top, 115, line_thickness)
-        self.draw_line(dc, -p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_bottom, 90, line_thickness)
+        self.draw_line(dc, self.p_side, 320, line_thickness)
+        self.draw_line(dc, self.p_bottom, 270, line_thickness)
+        self.draw_line(dc, self.p_side, 140, line_thickness)
+        self.draw_line(dc, self.p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_bottom, 90, line_thickness)
+        self.draw_line(dc, self.p_side, 320, line_thickness)
+        self.draw_line(dc, self.p_bottom, 270, line_thickness)
+        self.draw_line(dc, self.p_side, 140, line_thickness)
+        self.draw_line(dc, self.p_side, 320, line_thickness)
+        self.draw_line(dc, self.p_front, 190, line_thickness)
+        self.draw_line(dc, self.p_bottom, 90, line_thickness)
+        self.draw_line(dc, self.p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_side, 140, line_thickness)
+        self.draw_line(dc, self.p_front, 190, line_thickness)
+        self.draw_line(dc, self.p_top, 115, line_thickness)
+        self.draw_line(dc, self.p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_top, 295, line_thickness)
+        self.draw_line(dc, self.p_side, 45, line_thickness)
+        self.draw_line(dc, self.p_top, 115, line_thickness)
+        self.draw_line(dc, -self.p_side, 45, line_thickness)
+        self.draw_line(dc, -self.p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_side, 45, line_thickness)
+        self.draw_line(dc, -self.p_top, 115, line_thickness)
+        self.draw_line(dc, -self.p_side, 45, line_thickness)
+        self.draw_line(dc, self.p_side, 45, line_thickness)
+        self.draw_line(dc, self.p_front, 10, line_thickness)
+        self.draw_line(dc, self.p_top, 115, line_thickness)
+        self.draw_line(dc, -self.p_front, 10, line_thickness)
 #-------------------------------------------------------------------------------#
 
 #database
@@ -461,8 +505,8 @@ def write_data(fileDir, data):
 #run program
 if __name__ == "__main__":
     app = wx.App()
-    frame = bucky(parent = None, id = -1,) 
-    frame.SetMaxSize((256, 197))
+    frame = bucky(None, style = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+    # frame.SetMaxSize((256, 197))
     frame.Show()
     app.MainLoop()
     

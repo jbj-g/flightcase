@@ -20,14 +20,6 @@ class bucky(wx.Frame):
         self.SetMenuBar(MenuBar)
         
         self.sizer = wx.GridBagSizer(5, 5)
-        #input boxes
-        self.input1 = wx.TextCtrl(panel, size=(60, -1), pos=(20, 20))
-
-        #text boxen
-        ButtonSize7 = wx.RadioButton(panel, label = "7mm")
-        ButtonSize10 = wx.RadioButton(panel, label = "10mm")
-        self.height = wx.StaticText(panel, label="height")
-        """ self.width = wx.StaticText(panel, label="Your quote:") """
         #status bar en menu 
         status = self.CreateStatusBar()  
 
@@ -35,13 +27,7 @@ class bucky(wx.Frame):
         button = wx.Button(panel, label = "exit", pos=(500,300), size = (60,60))
         self.Bind(wx.EVT_BUTTON, self.CloseButton, button)
         self.Bind(wx.EVT_CLOSE, self.CloseWindow)
-
-        #save button
-        SaveButton = wx.Button(panel, label="Save")
-        SaveButton.Bind(wx.EVT_BUTTON, self.OnButton)
-        self.result = wx.StaticText(panel, label="")
-
-
+        
         #exit button functies
     def CloseButton(self, event):
         self.Close(True)
